@@ -1,0 +1,69 @@
+package com.iris.common.security;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.UUID;
+
+@Service
+public class JwtService {
+
+    private final SecretKey signingKey;
+    private final Duration accessTokenTtl;
+    private final Duration refreshTokenTtl;
+
+    public JwtService(
+            @Value("${iris.jwt.secret}") String secret,
+            @Value("${iris.jwt.access-token-ttl-minutes}") long accessTtlMinutes,
+            @Value("${iris.jwt.refresh-token-ttl-days}") long refreshTtlDays
+    ) {
+        // Use hmacShaKeyFor so weak secrets fail fast at startup.
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.accessTokenTtl = Duration.ofMinutes(accessTtlMinutes);
+        this.refreshTokenTtl = Duration.ofDays(refreshTtlDays);
+    }
+
+    public String generateAccessToken(UUID userId, String email) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", email)
+                .claim("type", "access")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(accessTokenTtl)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String generateRefreshToken(UUID userId) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("type", "refresh")
+                .id(UUID.randomUUID().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(refreshTokenTtl)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public Claims parseAndValidate(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public Duration getRefreshTokenTtl() {
+        return refreshTokenTtl;
+    }
+}
