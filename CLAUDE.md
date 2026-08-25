@@ -55,6 +55,35 @@ mobile app talks only to this REST API, never directly to the database.
 10. **Refresh tokens are stored as SHA-256 hashes**, never raw. On refresh,
     we rotate: old token is revoked, new pair issued.
 
+## Code quality principles
+
+Apply these to every change, not just new features:
+
+- Correctness first — production-ready code only, not a sketch of the idea.
+- Follow SOLID, DRY, KISS, and separation of concerns; prefer composition
+  over inheritance where a choice exists.
+- Avoid code smells, anti-patterns, unnecessary abstractions, duplicated
+  logic, and over-engineering — the simplest robust solution wins over a
+  clever or speculative one.
+- Follow modern Java 21 / Spring Boot 3.3 idioms and conventions.
+- Write self-explanatory code with meaningful names; comment only where
+  intent genuinely isn't obvious from the code itself.
+- Handle edge cases, validation, error handling, concurrency, and resource
+  management explicitly — don't assume the happy path.
+- Design for security, observability, reliability, and testability from the
+  start, not bolted on after.
+- Preserve existing behavior when refactoring unless a behavior change was
+  explicitly requested.
+- Be mindful of performance and database access patterns (avoid N+1 queries,
+  keep indexed columns in mind) for production workloads.
+- New or changed logic needs unit/integration test coverage.
+- Before proposing a solution, weigh trade-offs briefly and pick the
+  simplest robust approach — don't dump an exhaustive options survey.
+- If a requirement is ambiguous, ask rather than guessing at something
+  risky or hard to reverse.
+- Keep responses focused: the implementation and essential explanation
+  only — no filler, no speculative changes not asked for.
+
 ## Reference implementation
 
 The **nutrition** feature (`com.iris.nutrition`) is the fully-fleshed-out
