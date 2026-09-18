@@ -129,11 +129,10 @@ class WeightServiceTest {
     }
 
     @Test
-    void latest_throwsNotFoundWhenUserHasNoEntries() {
+    void latest_returnsNullWhenUserHasNoEntries() {
         when(weightRepository.findFirstByUserIdOrderByRecordedAtDesc(userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> weightService.latest(userId))
-                .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(weightService.latest(userId)).isNull();
     }
 
     @Test

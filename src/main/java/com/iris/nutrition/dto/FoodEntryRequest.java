@@ -2,6 +2,7 @@ package com.iris.nutrition.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -11,7 +12,7 @@ import java.time.Instant;
 public record FoodEntryRequest(
         @NotBlank @Size(max = 255) String name,
         @Size(max = 120) String brand,
-        @NotBlank String mealType,
+        @NotBlank @Pattern(regexp = "breakfast|lunch|dinner|snack|drink") String mealType,
         @NotNull @PositiveOrZero BigDecimal servingSize,
         @NotBlank String servingUnit,
         @NotNull @PositiveOrZero BigDecimal calories,

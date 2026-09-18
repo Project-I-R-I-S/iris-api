@@ -3,6 +3,7 @@ package com.iris.nutrition;
 import com.iris.common.security.AuthenticatedUser;
 import com.iris.nutrition.dto.FoodEntryRequest;
 import com.iris.nutrition.dto.FoodEntryResponse;
+import com.iris.user.UserService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class NutritionController {
 
     private final NutritionService nutritionService;
+    private final UserService userService;
 
-    public NutritionController(NutritionService nutritionService) {
+    public NutritionController(NutritionService nutritionService, UserService userService) {
         this.nutritionService = nutritionService;
+        this.userService = userService;
     }
 
     @PostMapping
@@ -33,10 +36,12 @@ public class NutritionController {
     @GetMapping
     public List<FoodEntryResponse> listForDay(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(defaultValue = "Asia/Kolkata") String timezone
+            @RequestParam(required = false) String timezone
     ) {
-        return nutritionService.listForDay(
-                AuthenticatedUser.currentUserId(), date, ZoneId.of(timezone));
+        UUID userId = AuthenticatedUser.currentUserId();
+        ZoneId zone = timezone != null ? ZoneId.of(timezone)
+                : ZoneId.of(userService.getById(userId).timezone());
+        return nutritionService.listForDay(userId, date, zone);
     }
 
     @PutMapping("/{id}")

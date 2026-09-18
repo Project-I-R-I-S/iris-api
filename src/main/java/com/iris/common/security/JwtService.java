@@ -16,6 +16,9 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
+    private static final String INSECURE_DEFAULT_SECRET =
+            "change-me-in-production-please-use-a-long-random-value-of-at-least-32-bytes";
+
     private final SecretKey signingKey;
     private final Duration accessTokenTtl;
     private final Duration refreshTokenTtl;
@@ -25,6 +28,11 @@ public class JwtService {
             @Value("${iris.jwt.access-token-ttl-minutes}") long accessTtlMinutes,
             @Value("${iris.jwt.refresh-token-ttl-days}") long refreshTtlDays
     ) {
+        if (INSECURE_DEFAULT_SECRET.equals(secret)) {
+            throw new IllegalStateException(
+                    "iris.jwt.secret is set to the insecure default placeholder. " +
+                            "Set the JWT_SECRET environment variable to a real random value before starting the app.");
+        }
         // Use hmacShaKeyFor so weak secrets fail fast at startup.
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenTtl = Duration.ofMinutes(accessTtlMinutes);
@@ -61,6 +69,10 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public Duration getAccessTokenTtl() {
+        return accessTokenTtl;
     }
 
     public Duration getRefreshTokenTtl() {

@@ -6,6 +6,8 @@ import com.iris.common.security.JwtAuthenticationFilter;
 import com.iris.hydration.dto.DailyHydrationResponse;
 import com.iris.hydration.dto.WaterEntryRequest;
 import com.iris.hydration.dto.WaterEntryResponse;
+import com.iris.user.UserService;
+import com.iris.user.dto.UserResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,8 @@ class HydrationControllerTest {
     private HydrationService hydrationService;
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockBean
+    private UserService userService;
 
     private final UUID userId = UUID.randomUUID();
 
@@ -84,6 +88,9 @@ class HydrationControllerTest {
 
     @Test
     void listForDay_defaultsToKolkataTimezoneWhenNotSpecified() throws Exception {
+        when(userService.getById(userId)).thenReturn(new UserResponse(
+                userId, "user@example.com", "User", null, null, null,
+                null, null, "Asia/Kolkata", 2500, null, 400, true));
         when(hydrationService.listForDay(eq(userId), eq(LocalDate.of(2026, 8, 25)), eq(ZoneId.of("Asia/Kolkata"))))
                 .thenReturn(List.of());
 

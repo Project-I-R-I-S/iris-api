@@ -1,0 +1,8 @@
+target/
+.git/
+.serena/
+.env
+.env.example
+*.log
+.idea/
+*.iml

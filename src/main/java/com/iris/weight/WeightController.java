@@ -1,6 +1,7 @@
 package com.iris.weight;
 
 import com.iris.common.security.AuthenticatedUser;
+import com.iris.user.UserService;
 import com.iris.weight.dto.WeightEntryRequest;
 import com.iris.weight.dto.WeightEntryResponse;
 import jakarta.validation.Valid;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class WeightController {
 
     private final WeightService weightService;
+    private final UserService userService;
 
-    public WeightController(WeightService weightService) {
+    public WeightController(WeightService weightService, UserService userService) {
         this.weightService = weightService;
+        this.userService = userService;
     }
 
     @PostMapping
@@ -34,15 +37,18 @@ public class WeightController {
     public List<WeightEntryResponse> listInRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(defaultValue = "Asia/Kolkata") String timezone
+            @RequestParam(required = false) String timezone
     ) {
-        return weightService.listInRange(
-                AuthenticatedUser.currentUserId(), from, to, ZoneId.of(timezone));
+        UUID userId = AuthenticatedUser.currentUserId();
+        ZoneId zone = timezone != null ? ZoneId.of(timezone)
+                : ZoneId.of(userService.getById(userId).timezone());
+        return weightService.listInRange(userId, from, to, zone);
     }
 
     @GetMapping("/latest")
-    public WeightEntryResponse latest() {
-        return weightService.latest(AuthenticatedUser.currentUserId());
+    public ResponseEntity<WeightEntryResponse> latest() {
+        WeightEntryResponse result = weightService.latest(AuthenticatedUser.currentUserId());
+        return result != null ? ResponseEntity.ok(result) : ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")

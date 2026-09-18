@@ -30,14 +30,11 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
-  error:
-    include-message: always
-    include-binding-errors: always
 
 iris:
   jwt:
     secret: ${JWT_SECRET:change-me-in-production-please-use-a-long-random-value-of-at-least-32-bytes}
-    access-token-ttl-minutes: 60
+    access-token-ttl-minutes: 15  # TODO: full access-token blacklist on logout deferred to a future build; short TTL limits exposure until then
     refresh-token-ttl-days: 30
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
