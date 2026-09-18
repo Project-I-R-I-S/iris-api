@@ -28,7 +28,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final Map<String, Bucket> SIGNUP_LOGIN_BUCKETS = new ConcurrentHashMap<>();
     private static final Map<String, Bucket> REFRESH_BUCKETS = new ConcurrentHashMap<>();
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public RateLimitingFilter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
