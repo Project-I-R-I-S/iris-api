@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -18,6 +20,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     void deleteByUserId(UUID userId);
 
     @Modifying
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query("UPDATE RefreshToken rt SET rt.revokedAt = :now WHERE rt.userId = :userId AND rt.revokedAt IS NULL")
     int revokeAllActiveForUser(@Param("userId") UUID userId, @Param("now") Instant now);
 }

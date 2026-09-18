@@ -71,4 +71,37 @@ class IrisApiApplicationTests {
                         .content(objectMapper.writeValueAsString(new RefreshRequest(rotatedRefreshToken))))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    void refreshTokenReuse_revokesWholeFamily_againstRealDatabase() throws Exception {
+        String email = "e2e-reuse-" + UUID.randomUUID() + "@example.com";
+        String password = "correct-horse-battery-staple";
+
+        SignupRequest signup = new SignupRequest(email, password, "E2E Reuse Test User");
+        String signupBody = mockMvc.perform(post("/api/v1/auth/signup")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(signup)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String originalRefreshToken = objectMapper.readTree(signupBody).get("refreshToken").asText();
+
+        String rotatedBody = mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(new RefreshRequest(originalRefreshToken))))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String rotatedRefreshToken = objectMapper.readTree(rotatedBody).get("refreshToken").asText();
+
+        // Reusing the already-rotated token must be treated as compromise and revoke the whole family.
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(new RefreshRequest(originalRefreshToken))))
+                .andExpect(status().isUnauthorized());
+
+        // The newest token in the family must now be revoked too, even though the request above threw.
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(new RefreshRequest(rotatedRefreshToken))))
+                .andExpect(status().isUnauthorized());
+    }
 }
