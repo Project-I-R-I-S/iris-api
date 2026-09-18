@@ -22,6 +22,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <google-api-client.version>2.7.0</google-api-client.version>
         <springdoc.version>2.6.0</springdoc.version>
+        <bucket4j.version>8.10.1</bucket4j.version>
     </properties>
 
     <dependencies>
@@ -84,6 +85,13 @@
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
             <version>${google-api-client.version}</version>
+        </dependency>
+
+        <!-- Rate limiting for auth endpoints -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
         </dependency>
 
         <!-- OpenAPI / Swagger UI (auto-generates spec for mobile consumption) -->

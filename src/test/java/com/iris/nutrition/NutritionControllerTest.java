@@ -6,6 +6,7 @@ import com.iris.common.security.AuthenticatedUser;
 import com.iris.common.security.JwtAuthenticationFilter;
 import com.iris.nutrition.dto.FoodEntryRequest;
 import com.iris.nutrition.dto.FoodEntryResponse;
+import com.iris.user.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,8 @@ class NutritionControllerTest {
     private NutritionService nutritionService;
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter; // keeps the slice from constructing the real filter
+    @MockBean
+    private UserService userService;
 
     private final UUID userId = UUID.randomUUID();
 

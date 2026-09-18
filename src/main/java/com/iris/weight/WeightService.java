@@ -67,9 +67,9 @@ public class WeightService {
 
     @Transactional(readOnly = true)
     public WeightEntryResponse latest(UUID userId) {
-        WeightEntry entry = weightRepository.findFirstByUserIdOrderByRecordedAtDesc(userId)
-                .orElseThrow(() -> ResourceNotFoundException.forId("Weight entry", "latest for user " + userId));
-        return toResponse(entry, heightCm(userId));
+        return weightRepository.findFirstByUserIdOrderByRecordedAtDesc(userId)
+                .map(entry -> toResponse(entry, heightCm(userId)))
+                .orElse(null);
     }
 
     private Double heightCm(UUID userId) {

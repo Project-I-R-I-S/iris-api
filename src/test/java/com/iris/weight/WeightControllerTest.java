@@ -1,9 +1,10 @@
 package com.iris.weight;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iris.common.exception.ResourceNotFoundException;
 import com.iris.common.security.AuthenticatedUser;
 import com.iris.common.security.JwtAuthenticationFilter;
+import com.iris.user.UserService;
+import com.iris.user.dto.UserResponse;
 import com.iris.weight.dto.WeightEntryRequest;
 import com.iris.weight.dto.WeightEntryResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +43,8 @@ class WeightControllerTest {
     private WeightService weightService;
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockBean
+    private UserService userService;
 
     private final UUID userId = UUID.randomUUID();
 
@@ -82,16 +85,18 @@ class WeightControllerTest {
     }
 
     @Test
-    void latest_returns404WhenTheUserHasNoEntries() throws Exception {
-        when(weightService.latest(userId))
-                .thenThrow(ResourceNotFoundException.forId("Weight entry", "latest for user " + userId));
+    void latest_returns204WhenTheUserHasNoEntries() throws Exception {
+        when(weightService.latest(userId)).thenReturn(null);
 
         mockMvc.perform(get("/api/v1/weight/entries/latest"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNoContent());
     }
 
     @Test
     void listInRange_passesFromToAndTimezoneThrough() throws Exception {
+        when(userService.getById(userId)).thenReturn(new UserResponse(
+                userId, "user@example.com", "User", null, null, null,
+                null, null, "Asia/Kolkata", 2500, null, 400, true));
         when(weightService.listInRange(eq(userId), eq(java.time.LocalDate.of(2026, 8, 1)),
                 eq(java.time.LocalDate.of(2026, 8, 25)), eq(java.time.ZoneId.of("Asia/Kolkata"))))
                 .thenReturn(List.of());

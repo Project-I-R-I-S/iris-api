@@ -16,10 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -51,15 +51,8 @@ public class AuthService {
             throw new AuthException(HttpStatus.CONFLICT, "Email already registered");
         }
 
-        User user = User.builder()
-                .email(email)
+        User user = defaultProfileBuilder(email, req.displayName())
                 .passwordHash(passwordEncoder.encode(req.password()))
-                .displayName(req.displayName())
-                .dayStartTime(LocalTime.of(7, 0))
-                .dayEndTime(LocalTime.of(23, 0))
-                .timezone("Asia/Kolkata")
-                .dailyWaterGoalMl(2500)
-                .dailyCaffeineLimitMg(400)
                 .emailVerified(false)
                 .build();
 
@@ -91,17 +84,20 @@ public class AuthService {
         String name = (String) payload.get("name");
         Boolean emailVerified = payload.getEmailVerified();
 
-        User user = userRepository.findByGoogleSubject(googleSub)
-                .or(() -> userRepository.findByEmail(email))
-                .orElseGet(() -> User.builder()
-                        .email(email)
-                        .displayName(name)
-                        .dayStartTime(LocalTime.of(7, 0))
-                        .dayEndTime(LocalTime.of(23, 0))
-                        .timezone("Asia/Kolkata")
-                        .dailyWaterGoalMl(2500)
-                        .dailyCaffeineLimitMg(400)
-                        .build());
+        Optional<User> existing = userRepository.findByGoogleSubject(googleSub);
+        if (existing.isEmpty()) {
+            Optional<User> byEmail = userRepository.findByEmail(email);
+            if (byEmail.isPresent()) {
+                if (!Boolean.TRUE.equals(emailVerified)) {
+                    throw new AuthException(HttpStatus.CONFLICT,
+                            "An account with this email already exists. Sign in with password, " +
+                                    "or use a verified Google account to link it.");
+                }
+                existing = byEmail;
+            }
+        }
+
+        User user = existing.orElseGet(() -> defaultProfileBuilder(email, name).build());
 
         // Link Google account if not already linked, and mark verified.
         if (user.getGoogleSubject() == null) {
@@ -133,6 +129,10 @@ public class AuthService {
                 .orElseThrow(() -> new AuthException(HttpStatus.UNAUTHORIZED, "Refresh token not recognized"));
 
         if (!stored.isActive()) {
+            if (stored.getRevokedAt() != null) {
+                // Reuse of an already-rotated token: treat as compromised and revoke the whole family.
+                refreshTokenRepository.revokeAllActiveForUser(stored.getUserId(), Instant.now());
+            }
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Refresh token expired or revoked");
         }
 
@@ -152,6 +152,17 @@ public class AuthService {
                 .ifPresent(rt -> rt.setRevokedAt(Instant.now()));
     }
 
+    private User.UserBuilder defaultProfileBuilder(String email, String displayName) {
+        return User.builder()
+                .email(email)
+                .displayName(displayName)
+                .dayStartTime(LocalTime.of(7, 0))
+                .dayEndTime(LocalTime.of(23, 0))
+                .timezone("Asia/Kolkata")
+                .dailyWaterGoalMl(2500)
+                .dailyCaffeineLimitMg(400);
+    }
+
     private AuthResponse buildAuthResponse(User user) {
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtService.generateRefreshToken(user.getId());
@@ -164,7 +175,7 @@ public class AuthService {
         refreshTokenRepository.save(record);
 
         // TTL exposed to client so they know when to refresh proactively.
-        long accessTtlSeconds = Duration.ofMinutes(60).toSeconds();
+        long accessTtlSeconds = jwtService.getAccessTokenTtl().toSeconds();
 
         return new AuthResponse(accessToken, refreshToken, accessTtlSeconds, UserResponse.from(user));
     }

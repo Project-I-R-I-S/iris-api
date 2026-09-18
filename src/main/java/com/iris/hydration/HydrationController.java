@@ -4,6 +4,7 @@ import com.iris.common.security.AuthenticatedUser;
 import com.iris.hydration.dto.DailyHydrationResponse;
 import com.iris.hydration.dto.WaterEntryRequest;
 import com.iris.hydration.dto.WaterEntryResponse;
+import com.iris.user.UserService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,9 +21,11 @@ import java.util.UUID;
 public class HydrationController {
 
     private final HydrationService hydrationService;
+    private final UserService userService;
 
-    public HydrationController(HydrationService hydrationService) {
+    public HydrationController(HydrationService hydrationService, UserService userService) {
         this.hydrationService = hydrationService;
+        this.userService = userService;
     }
 
     @PostMapping("/entries")
@@ -34,10 +37,12 @@ public class HydrationController {
     @GetMapping("/entries")
     public List<WaterEntryResponse> listForDay(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(defaultValue = "Asia/Kolkata") String timezone
+            @RequestParam(required = false) String timezone
     ) {
-        return hydrationService.listForDay(
-                AuthenticatedUser.currentUserId(), date, ZoneId.of(timezone));
+        UUID userId = AuthenticatedUser.currentUserId();
+        ZoneId zone = timezone != null ? ZoneId.of(timezone)
+                : ZoneId.of(userService.getById(userId).timezone());
+        return hydrationService.listForDay(userId, date, zone);
     }
 
     @PutMapping("/entries/{id}")
@@ -54,9 +59,11 @@ public class HydrationController {
     @GetMapping("/daily")
     public DailyHydrationResponse daily(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(defaultValue = "Asia/Kolkata") String timezone
+            @RequestParam(required = false) String timezone
     ) {
-        return hydrationService.dailyTotal(
-                AuthenticatedUser.currentUserId(), date, ZoneId.of(timezone));
+        UUID userId = AuthenticatedUser.currentUserId();
+        ZoneId zone = timezone != null ? ZoneId.of(timezone)
+                : ZoneId.of(userService.getById(userId).timezone());
+        return hydrationService.dailyTotal(userId, date, zone);
     }
 }
