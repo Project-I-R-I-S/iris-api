@@ -11,6 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.DateTimeException;
 import java.util.List;
@@ -77,6 +78,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DateTimeException.class)
     public ResponseEntity<ApiError> handleDateTime(DateTimeException ex, HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest req) {
+        return build(HttpStatus.NOT_FOUND, "Not Found", "The requested resource was not found", req);
     }
 
     @ExceptionHandler(Exception.class)
