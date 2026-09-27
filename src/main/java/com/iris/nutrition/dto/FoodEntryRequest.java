@@ -15,7 +15,7 @@ public record FoodEntryRequest(
         @NotBlank @Pattern(regexp = "breakfast|lunch|dinner|snack|drink") String mealType,
         @NotNull @PositiveOrZero BigDecimal servingSize,
         @NotBlank String servingUnit,
-        @NotNull @PositiveOrZero BigDecimal calories,
+        @PositiveOrZero BigDecimal calories,
         @PositiveOrZero BigDecimal proteinG,
         @PositiveOrZero BigDecimal carbsG,
         @PositiveOrZero BigDecimal fatG,

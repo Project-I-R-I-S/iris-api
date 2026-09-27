@@ -33,7 +33,7 @@ public class NutritionService {
                 .mealType(req.mealType())
                 .servingSize(req.servingSize())
                 .servingUnit(req.servingUnit())
-                .calories(req.calories())
+                .calories(Numbers.nz(req.calories()))
                 .proteinG(Numbers.nz(req.proteinG()))
                 .carbsG(Numbers.nz(req.carbsG()))
                 .fatG(Numbers.nz(req.fatG()))
@@ -57,7 +57,7 @@ public class NutritionService {
         entry.setMealType(req.mealType());
         entry.setServingSize(req.servingSize());
         entry.setServingUnit(req.servingUnit());
-        entry.setCalories(req.calories());
+        entry.setCalories(Numbers.nz(req.calories()));
         entry.setProteinG(Numbers.nz(req.proteinG()));
         entry.setCarbsG(Numbers.nz(req.carbsG()));
         entry.setFatG(Numbers.nz(req.fatG()));
